@@ -1,8 +1,27 @@
 {
   "name": "flechette",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description" : "A highly configurable wrapper for Fetch API that supports programmatic retries and completely obfuscates promise handling.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "homepage": "https://github.com/pseudosma/flechette",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pseudosma/flechette.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pseudosma/flechette/issues"
+  },
+  "keywords": [
+    "fetch",
+    "Fetch API",
+    "flechette",
+    "browser",
+    "wrap",
+    "wrapper"
+  ],
+  "author": "David Paige",
+  "license": "MIT",
   "files": [
     "lib/**/*"
   ],
@@ -10,18 +29,11 @@
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "jest --config jestconfig.json",
+    "coverallsTest" : "jest --config jestconfig.json && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "build": "tsc",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint"
   },
-  "keywords": [
-    "fetch",
-    "promise",
-    "callback",
-    "async"
-  ],
-  "author": "David Paige",
-  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^24.9.0",
     "jest": "^24.9.0",
@@ -32,6 +44,6 @@
     "typescript": "^3.7.5"
   },
   "dependencies": {
-    "storage-deck": "^0.2.0"
+    "storage-deck": "^1.0.0"
   }
 }

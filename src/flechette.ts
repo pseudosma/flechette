@@ -1,12 +1,12 @@
 import {
   addToStorage,
   createNewStorage,
-  retrieveFromStorage
+  retrieveFromStorage,
 } from "storage-deck";
 
 import { flechetteFetch } from "./senders";
 
-const reservedKeyName = "flechette";
+export const reservedKeyName = "flechette";
 const reservedStorageName = "appConfig";
 const defaultTimeout = 30000;
 const defaultTimeoutRetryCount = 2;
@@ -14,7 +14,7 @@ const defaultSuccessCodes: Array<any> = ["200-299"];
 const defaultRetryActions: Array<RetryAction> = [
   {
     action: (
-      response: EvaluatedResponse,
+      response: FlechetteResponse,
       sent: SendArgs,
       waitingFunc: ToggleFunc,
       successFunc: ResponseFunc,
@@ -26,7 +26,7 @@ const defaultRetryActions: Array<RetryAction> = [
   },
   {
     action: (
-      response: EvaluatedResponse,
+      response: FlechetteResponse,
       sent: SendArgs,
       waitingFunc: ToggleFunc,
       successFunc: ResponseFunc,
@@ -38,7 +38,7 @@ const defaultRetryActions: Array<RetryAction> = [
   },
   {
     action: (
-      response: EvaluatedResponse,
+      response: FlechetteResponse,
       sent: SendArgs,
       waitingFunc: ToggleFunc,
       successFunc: ResponseFunc,
@@ -50,28 +50,41 @@ const defaultRetryActions: Array<RetryAction> = [
   }
 ];
 
+export enum CachingType {
+  Window = 0,
+  Session = 1,
+  Local = 2
+}
+
+export interface CachingScheme {
+  type: CachingType;
+  expiration: Date;
+}
+
 export interface NetResponse {
   statusCode: number;
   response: string;
 }
 
-export interface EvaluatedResponse {
+export interface FlechetteResponse {
   success: boolean;
   statusCode: number;
   response: any;
+  isCachedResponse: boolean;
 }
 
 export interface SendArgs extends RequestInit {
   path: string;
   instanceName?: string;
+  cachingScheme?: CachingScheme;
 }
 
-export type ResponseFunc = (response: EvaluatedResponse) => void;
+export type ResponseFunc = (response: FlechetteResponse) => void;
 
 export type ToggleFunc = (isWaiting: boolean) => void;
 
 export type RetryFunc = (
-  response: EvaluatedResponse,
+  response: FlechetteResponse,
   sent: SendArgs,
   waitingFunc: ToggleFunc,
   successFunc: ResponseFunc,
@@ -99,7 +112,7 @@ export class FlechetteController {
   public timeout: number = defaultTimeout;
   public maxTimeoutRetryCount: number = defaultTimeoutRetryCount;
   public baseUrl: string = "";
-  public headers: Headers | null = null; // empty headers by default
+  public headers: Headers | string[][] | Record<string, string> | undefined
   public instanceName: string = reservedKeyName;
   public abortController = new AbortController();
 
@@ -123,6 +136,9 @@ export class FlechetteController {
       this.headers = props.headers;
     }
     if (props.instanceName) {
+      if (props.instanceName.includes("-")) {
+        throw new Error("Dashes (-) cannot be used in flechette instance names");
+      }
       this.instanceName = props.instanceName;
     }
   }
@@ -135,7 +151,7 @@ export class FlechetteController {
 export const configureFlechette = (i: Flechette) => {
   const f = new FlechetteController(i);
   createNewStorage(reservedStorageName);
-  addToStorage(f.instanceName, f, reservedStorageName);
+  addToStorage({ key: f.instanceName, value: f}, reservedStorageName);
 };
 
 export const getFlechetteInstance = (

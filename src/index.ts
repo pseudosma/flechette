@@ -1,8 +1,8 @@
 import {
   configureFlechette,
-  EvaluatedResponse,
   Flechette,
   FlechetteController,
+  FlechetteResponse,
   getFlechetteInstance,
   ResponseFunc,
   RetryAction,
@@ -13,12 +13,15 @@ import {
 
 import { flechetteFetch } from "./senders";
 
+import { clearFlechetteInstanceCache } from "./utils";
+
 export {
+  clearFlechetteInstanceCache,
   configureFlechette,
-  EvaluatedResponse,
   Flechette,
   FlechetteController,
   flechetteFetch,
+  FlechetteResponse,
   getFlechetteInstance,
   ResponseFunc,
   RetryAction,

@@ -13,11 +13,11 @@ describe("when using configureFlechette", () => {
     expect(getFlechetteInstance()).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["200-299"]);
-    expect(f.retryActions.length).toStrictEqual(3);
+    expect(f.retryActions!.length).toStrictEqual(3);
     expect(f.timeout).toStrictEqual(30000);
     expect(f.maxTimeoutRetryCount).toStrictEqual(2);
     expect(f.baseUrl).toStrictEqual("");
-    expect(f.headers).toStrictEqual(null);
+    expect(f.headers).toBeUndefined;
     expect(f.instanceName).toStrictEqual("flechette");
   });
   it("should create a custom instance", () => {
@@ -60,11 +60,11 @@ describe("when using configureFlechette", () => {
     expect(getFlechetteInstance("custom")).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["100-199", 300]);
-    expect(f.retryActions.length).toStrictEqual(0);
+    expect(f.retryActions!.length).toStrictEqual(0);
     expect(f.timeout).toStrictEqual(10);
     expect(f.maxTimeoutRetryCount).toStrictEqual(1);
     expect(f.baseUrl).toStrictEqual("foo");
-    expect(f.headers).not.toStrictEqual(null);
+    expect(f.headers).not.toBeUndefined;
     expect(f.instanceName).toStrictEqual("custom");
   });
   afterAll(() => {
@@ -83,7 +83,7 @@ describe("when using getFlechetteInstance", () => {
     expect(f.timeout).toStrictEqual(30000);
     expect(f.maxTimeoutRetryCount).toStrictEqual(2);
     expect(f.baseUrl).toStrictEqual("");
-    expect(f.headers).toStrictEqual(null);
+    expect(f.headers).toBeUndefined;
     expect(f.instanceName).toStrictEqual("flechette");
     // cleanup
     removeFromStorage("flechette", "appConfig");

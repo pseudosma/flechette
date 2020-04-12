@@ -1,6 +1,6 @@
 import {
-  EvaluatedResponse,
   FlechetteController,
+  FlechetteResponse,
   getFlechetteInstance,
   NetResponse,
   ResponseFunc,
@@ -9,7 +9,11 @@ import {
   ToggleFunc
 } from "./flechette";
 
-import { checkCodes } from "./utils";
+import { 
+  cacheResponseData, 
+  checkCodes, 
+  checkForCachedData 
+} from "./utils";
 
 export const send = (args: SendArgs): Promise<NetResponse> => {
   return fetch(args.path, args)
@@ -34,7 +38,7 @@ export const send = (args: SendArgs): Promise<NetResponse> => {
 export const evaluateResponse = (
   resp: NetResponse,
   f: FlechetteController
-): EvaluatedResponse => {
+): FlechetteResponse => {
   let s: boolean = false;
   let r;
   try {
@@ -47,7 +51,7 @@ export const evaluateResponse = (
     s = checkCodes(resp.statusCode, sc);
     return s;
   });
-  return { success: s, statusCode: resp.statusCode, response: r };
+  return { success: s, statusCode: resp.statusCode, response: r, isCachedResponse: false };
 };
 
 export const sendAndEvaluate = (
@@ -60,8 +64,9 @@ export const sendAndEvaluate = (
   waitingFunc(true);
   const response = send(args);
   Promise.resolve(response).then(res => {
-    const retVal: EvaluatedResponse = evaluateResponse(res, flechetteInstance);
+    const retVal: FlechetteResponse = evaluateResponse(res, flechetteInstance);
     if (retVal.success) {
+      cacheResponseData(args, retVal);
       waitingFunc(false);
       successFunc(retVal);
     } else {
@@ -69,7 +74,6 @@ export const sendAndEvaluate = (
         Array.isArray(flechetteInstance.retryActions) &&
         flechetteInstance.retryActions.length > 0
       ) {
-        // check just in case this has been manipulated
         const i = flechetteInstance.retryActions.findIndex(
           ra => ra.code === retVal.statusCode
         );
@@ -81,11 +85,11 @@ export const sendAndEvaluate = (
           // need to temporarily remove the retryAction so it doesn't loop
           flechetteInstance.retryActions.splice(i, 1);
           // add it back in success/failure
-          const sf = (rVal: EvaluatedResponse) => {
+          const sf = (rVal: FlechetteResponse) => {
             flechetteInstance.retryActions.push(r);
             successFunc(rVal);
           };
-          const ff = (rVal: EvaluatedResponse) => {
+          const ff = (rVal: FlechetteResponse) => {
             flechetteInstance.retryActions.push(r);
             failureFunc(rVal);
           };
@@ -109,41 +113,53 @@ export const flechetteFetch = (
   successFunc: ResponseFunc,
   failureFunc: ResponseFunc
 ) => {
-  const f = getFlechetteInstance(args.instanceName);
-  // initial setup
-  args.signal = f.abortController.signal;
-  args.path = f.baseUrl + args.path;
-
-  const t: Array<number> = []; // will be the timeout handlers
-
-  const sf: ResponseFunc = res => {
-    // wrap this so our timeout is cleared if sendAndEvaluate finishes
-    t.forEach(o => {
-      clearTimeout(o);
-    });
-    successFunc(res);
-  };
-  const ff: ResponseFunc = res => {
-    t.forEach(o => {
-      clearTimeout(o);
-    });
-    failureFunc(res);
-  };
-
-  if (typeof f.timeout === "number" && f.timeout > 0) {
-    // check just in case this has been manipulated
-    for (let i = 1; i <= f.maxTimeoutRetryCount; i++) {
-      // need to create all timeouts upfront so they can easily be cleared on success of one
-      t.push(
-        setTimeout(() => {
-          f.abortCurrentFetch();
-          console.warn(
-            "Timeout limit reached without a network response. Retrying..."
-          );
-          sendAndEvaluate(f, args, waitingFunc, sf, ff);
-        }, f.timeout * i)
-      );
+  // before anything else check to see if there's a cached response to these args
+  const r = checkForCachedData(args);
+  if (r === null) {
+    // no cached item found, continue through normal flow
+    const f = getFlechetteInstance(args.instanceName);
+    // initial setup
+    args.signal = f.abortController.signal;
+    args.path = f.baseUrl + args.path;
+    //if the SendArgs has headers, use those. Otherwise, use flechette's
+    if (!args.headers) {
+      args.headers = f.headers;
     }
+  
+    const t: Array<number> = []; // will be the timeout handlers
+  
+    const sf: ResponseFunc = res => {
+      // wrap this so our timeout is cleared if sendAndEvaluate finishes
+      t.forEach(o => {
+        clearTimeout(o);
+      });
+      successFunc(res);
+    };
+    const ff: ResponseFunc = res => {
+      t.forEach(o => {
+        clearTimeout(o);
+      });
+      failureFunc(res);
+    };
+  
+    if (typeof f.timeout === "number" && f.timeout > 0) {
+      // check just in case this has been manipulated
+      for (let i = 1; i <= f.maxTimeoutRetryCount; i++) {
+        // need to create all timeouts upfront so they can easily be cleared on success of one
+        t.push(
+          setTimeout(() => {
+            f.abortCurrentFetch();
+            console.warn(
+              "Timeout limit reached without a network response. Retrying..."
+            );
+            sendAndEvaluate(f, args, waitingFunc, sf, ff);
+          }, f.timeout * i)
+        );
+      }
+    }
+    sendAndEvaluate(f, args, waitingFunc, sf, ff);
+  } else {
+    waitingFunc(false);
+    successFunc(r);
   }
-  sendAndEvaluate(f, args, waitingFunc, sf, ff);
 };

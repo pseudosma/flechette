@@ -1,6 +1,6 @@
 import {
-  EvaluatedResponse,
   flechetteFetch,
+  FlechetteResponse,
   getFlechetteInstance
 } from "../index";
 import { evaluateResponse, send, sendAndEvaluate } from "../senders";
@@ -129,7 +129,8 @@ describe("when using evaluateResponse", () => {
     expect(e).toStrictEqual({
       success: true,
       statusCode: 200,
-      response: "foo"
+      response: "foo",
+      isCachedResponse: false
     });
   });
   it("should evaluate failure", () => {
@@ -140,7 +141,8 @@ describe("when using evaluateResponse", () => {
     expect(e).toStrictEqual({
       success: false,
       statusCode: 400,
-      response: "foo"
+      response: "foo",
+      isCachedResponse: false
     });
   });
   it("should try to parse if it's json", () => {
@@ -171,16 +173,17 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(2);
         expect(response).toStrictEqual({
           success: true,
           statusCode: 200,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onFailure fires
         expect(true).toStrictEqual(false);
         done();
@@ -205,17 +208,18 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(2);
         expect(response).toStrictEqual({
           success: false,
           statusCode: 500,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       }
@@ -241,18 +245,19 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(3); //set loading to true twice, then false once
         expect(isLoading).toStrictEqual(false);
         expect(response).toStrictEqual({
           success: false,
           statusCode: 408,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       }
@@ -278,18 +283,19 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(3);
         expect(isLoading).toStrictEqual(false);
         expect(response).toStrictEqual({
           success: false,
           statusCode: 429,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       }
@@ -315,18 +321,19 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(3);
         expect(isLoading).toStrictEqual(false);
         expect(response).toStrictEqual({
           success: false,
           statusCode: 504,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         //make sure that the action is placed back into flechette
         expect(
@@ -371,17 +378,18 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(3);
         expect(isLoading).toStrictEqual(false);
         expect(response).toStrictEqual({
           success: true,
           statusCode: 200,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onFailure fires
         expect(true).toStrictEqual(false);
         done();
@@ -407,17 +415,18 @@ describe("when using sendAndEvaluate", () => {
       fi,
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(2);
         expect(response).toStrictEqual({
           success: false,
           statusCode: 500,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       }
@@ -447,16 +456,17 @@ describe("when using flechetteFetch", () => {
     flechetteFetch(
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(2);
         expect(response).toStrictEqual({
           success: true,
           statusCode: 200,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onFailure fires
         expect(true).toStrictEqual(false);
         done();
@@ -479,17 +489,18 @@ describe("when using flechetteFetch", () => {
     flechetteFetch(
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(2);
         expect(response).toStrictEqual({
           success: true,
           statusCode: 200,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         removeFromStorage("test", "appConfig");
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onFailure fires
         expect(true).toStrictEqual(false);
         done();
@@ -512,17 +523,18 @@ describe("when using flechetteFetch", () => {
     flechetteFetch(
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(2);
         expect(response).toStrictEqual({
           success: false,
           statusCode: 500,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       }
@@ -554,17 +566,18 @@ describe("when using flechetteFetch", () => {
     flechetteFetch(
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         expect(loadingCount).toStrictEqual(4);
         //fires 3 times passing true, then once passing false
         expect(response).toStrictEqual({
           success: true,
           statusCode: 200,
-          response: "x"
+          response: "x",
+          isCachedResponse: false
         });
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onFailure fires
         expect(true).toStrictEqual(false);
         done();
@@ -595,12 +608,12 @@ describe("when using flechetteFetch", () => {
     flechetteFetch(
       args,
       toggleLoading,
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onSuccess fires
         expect(true).toStrictEqual(false);
         done();
       },
-      (response: EvaluatedResponse) => {
+      (response: FlechetteResponse) => {
         //force an error if onFailure fires
         expect(true).toStrictEqual(false);
         done();
