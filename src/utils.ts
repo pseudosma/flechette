@@ -1,7 +1,8 @@
 import {  
-  CachingType, 
+  CachingType,
   FlechetteResponse,
   reservedKeyName,
+  RetryAction,
   SendArgs
 } from "./flechette"
 
@@ -59,7 +60,7 @@ export const checkCodes = (
   return false;
 };
 
-const buildSearhRegEx = (name?: string, path?: string): RegExp => {
+export const buildSearhRegEx = (name?: string, path?: string): RegExp => {
   const n: string = name ? name : reservedKeyName;
   const p: string = path ? path : ".*?";
   return new RegExp(n + "\-" + p + "\-[0-9]*"); // instanceName-path-expiration
@@ -67,7 +68,7 @@ const buildSearhRegEx = (name?: string, path?: string): RegExp => {
 
 export const clearFlechetteInstanceCache = (name?: string) => {
   const re = buildSearhRegEx(name);
-  // now check long-term storage
+  // now check all storage
   removeFromStorage(re, reservedCacheName);
   removeFromLocalStorage(re);
   removeFromSessionStorage(re);
@@ -94,7 +95,7 @@ export const cacheResponseData = (sendArgs: SendArgs, response: FlechetteRespons
   }
 };
 
-const evaluateAndReturnCachedData = (getFunc: any, deleteFunc: any): any => {
+export const evaluateAndReturnCachedData = (getFunc: any, deleteFunc: any): any => {
   const r: StorageKeyValuePair[]|null  = getFunc();
   if (r !== null) {
     // a cached entry was found, now find out if it's expired
@@ -150,4 +151,52 @@ export const checkForCachedData = (sendArgs: SendArgs): FlechetteResponse|null =
   }
   return null;
 };
+
+export const combineHeaders = (
+  localHeaders: Headers, 
+  globalHeaders: Headers): Headers => {
+  //headers on the send args override those of the same key on the instance
+};
+
+export const determineRetryAction = (
+  statusCode: number,
+  localRetryActions: Array<RetryAction>|undefined, 
+  globalRetryActions: Array<RetryAction>|undefined): [RetryAction|undefined, number] => { 
+    // A retry action on the send args should override the flechetteInstance's version
+    var action: RetryAction|undefined = undefined;
+    var i: number = -1;
+    // first check if there's an existing action in the instance
+    if (
+      Array.isArray(globalRetryActions) &&
+      globalRetryActions.length > 0
+    ) {
+      i = globalRetryActions.findIndex(
+        ra => ra.code === statusCode
+      );
+      if (i > -1) {
+        action = Object.assign({},globalRetryActions[i]);
+        // shallow clone it since it will be spliced out later to avoid an infinite loop
+      }
+    }
+    // next check if there's an override
+    if (
+      Array.isArray(localRetryActions) &&
+      localRetryActions.length > 0
+    ) {
+      const newAction = localRetryActions.find(
+        ra => ra.code === statusCode
+      );
+      if (newAction) {
+        action = newAction;
+        // in case of overridden retryAction, the intention is for this to be a one
+        // time use, so we do not want to interfere with the default retry code in
+        // case it happens again.
+        // Make it look like there is not one in the list by .
+        i = -1;
+      }
+    }
+    return [action,i];
+};
+
+
 

@@ -4,7 +4,6 @@ import {
   getFlechetteInstance,
   NetResponse,
   ResponseFunc,
-  RetryAction,
   SendArgs,
   ToggleFunc
 } from "./flechette";
@@ -12,7 +11,8 @@ import {
 import { 
   cacheResponseData, 
   checkCodes, 
-  checkForCachedData 
+  checkForCachedData,
+  determineRetryAction 
 } from "./utils";
 
 export const send = (args: SendArgs): Promise<NetResponse> => {
@@ -54,6 +54,48 @@ export const evaluateResponse = (
   return { success: s, statusCode: resp.statusCode, response: r, isCachedResponse: false };
 };
 
+export const retry = (
+  response: FlechetteResponse,
+  args: SendArgs, 
+  flechetteInstance: FlechetteController,
+  waitingFunc: ToggleFunc,
+  successFunc: ResponseFunc,
+  failureFunc: ResponseFunc
+) : boolean => {
+  // this returns a tuple containing the desired retry action, if one exists,
+  // and its index if it comes from the global retryActions.
+
+  const ra = determineRetryAction(
+    response.statusCode, 
+    args.retryActions, 
+    flechetteInstance.retryActions);
+  if (ra[0] !== undefined) {
+    var finalize = () => {};
+    if (ra[1] > -1) {
+      // this indicates it was in the global retry list, 
+      // so we'll need to remove it and add it back in when all steps are done.
+      flechetteInstance.retryActions.splice(ra[1], 1);
+      finalize = () => {
+        if (ra[0]) {
+          flechetteInstance.retryActions.push(ra[0]);
+        }
+      }
+    }
+    const sf = (rVal: FlechetteResponse) => {
+      finalize();
+      successFunc(rVal);
+    };
+    const ff = (rVal: FlechetteResponse) => {
+      finalize();
+      failureFunc(rVal);
+    };
+    // let retryAction determine when waiting is over
+    ra[0].action(response, args, waitingFunc, sf, ff);
+    return true;
+  }
+  return false;
+}
+
 export const sendAndEvaluate = (
   flechetteInstance: FlechetteController,
   args: SendArgs,
@@ -70,36 +112,9 @@ export const sendAndEvaluate = (
       waitingFunc(false);
       successFunc(retVal);
     } else {
-      if (
-        Array.isArray(flechetteInstance.retryActions) &&
-        flechetteInstance.retryActions.length > 0
-      ) {
-        const i = flechetteInstance.retryActions.findIndex(
-          ra => ra.code === retVal.statusCode
-        );
-        if (i > -1) {
-          const r: RetryAction = Object.assign(
-            {},
-            flechetteInstance.retryActions[i]
-          );
-          // need to temporarily remove the retryAction so it doesn't loop
-          flechetteInstance.retryActions.splice(i, 1);
-          // add it back in success/failure
-          const sf = (rVal: FlechetteResponse) => {
-            flechetteInstance.retryActions.push(r);
-            successFunc(rVal);
-          };
-          const ff = (rVal: FlechetteResponse) => {
-            flechetteInstance.retryActions.push(r);
-            failureFunc(rVal);
-          };
-          // let retryAction determine when waiting is over
-          r.action(retVal, args, waitingFunc, sf, ff);
-        } else {
-          waitingFunc(false);
-          failureFunc(retVal);
-        }
-      } else {
+      // retry func encapsulates the whole retry process
+      // if it returns false, it means we're not retrying so move onto failure
+      if (!retry(retVal, args, flechetteInstance, waitingFunc, successFunc, failureFunc)) {
         waitingFunc(false);
         failureFunc(retVal);
       }

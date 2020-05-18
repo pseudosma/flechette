@@ -77,6 +77,7 @@ export interface SendArgs extends RequestInit {
   path: string;
   instanceName?: string;
   cachingScheme?: CachingScheme;
+  retryActions?: Array<RetryAction>; //single use retry acion
 }
 
 export type ResponseFunc = (response: FlechetteResponse) => void;
