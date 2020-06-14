@@ -1,4 +1,4 @@
-import { SendArgs, RetryAction } from "./flechette";
+import { RetryAction, SendArgs } from "./flechette";
 
 export const checkCodes = (
   incomingCode: number,
@@ -44,17 +44,17 @@ export const combineHeaders = (
   globalHeaders: Headers | string[][] | Record<string, string> | undefined
 ): Headers => {
   // headers on the send args override those of the same key on the instance
-  let newHeaders: Headers = new Headers();
+  const newHeaders: Headers = new Headers();
   if (globalHeaders) {
     // force conversion to Headers
     const gh: Headers = new Headers(globalHeaders);
-    for (let pair of gh.entries()) {
+    for (const pair of gh.entries()) {
       newHeaders.append(pair[0], pair[1]);
     }
   }
   if (localHeaders) {
     const lh: Headers = new Headers(localHeaders);
-    for (let pair of lh.entries()) {
+    for (const pair of lh.entries()) {
       newHeaders.append(pair[0], pair[1]);
     }
   }
@@ -67,8 +67,8 @@ export const determineRetryAction = (
   globalRetryActions: Array<RetryAction> | undefined
 ): [RetryAction | undefined, number] => {
   // A retry action on the send args should override the flechetteInstance's version
-  let action: RetryAction | undefined = undefined;
-  let i: number = -1;
+  var action: RetryAction | undefined;
+  var i: number = -1;
   // first check if there's an existing action in the instance
   if (Array.isArray(globalRetryActions) && globalRetryActions.length > 0) {
     i = globalRetryActions.findIndex(ra => ra.code === statusCode);

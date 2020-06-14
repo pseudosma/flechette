@@ -57,7 +57,7 @@ describe("when using configureFlechette", () => {
       headers: h,
       instanceName: "custom"
     });
-    let f: Flechette = retrieveFromStorage("custom", "appConfig");
+    var f: Flechette = retrieveFromStorage("custom", "appConfig");
     expect(getFlechetteInstance("custom")).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["100-199", 300]);

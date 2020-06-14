@@ -11,8 +11,8 @@ window.Headers = MockHeaders;
 
 describe("when using checkCodes", () => {
   it("should return true if the code is in a range", () => {
-    let codes = ["200-299", 302, 800];
-    let b = false;
+    var codes = ["200-299", 302, 800];
+    var b = false;
     codes.some(c => {
       b = checkCodes(233, c);
       return b;
@@ -20,8 +20,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(true);
   });
   it("should return true if the code is in the array", () => {
-    let codes = ["200-299", 302, 800];
-    let b = false;
+    var codes = ["200-299", 302, 800];
+    var b = false;
     codes.some(c => {
       b = checkCodes(302, c);
       return b;
@@ -29,8 +29,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(true);
   });
   it("should return true if the code is at the start of the range", () => {
-    let codes = ["200-299"];
-    let b = false;
+    var codes = ["200-299"];
+    var b = false;
     codes.some(c => {
       b = checkCodes(200, c);
       return b;
@@ -38,8 +38,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(true);
   });
   it("should return true if the code is at the end of the range", () => {
-    let codes = ["200-299"];
-    let b = false;
+    var codes = ["200-299"];
+    var b = false;
     codes.some(c => {
       b = checkCodes(299, c);
       return b;
@@ -47,8 +47,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(true);
   });
   it("should work with multiple ranges", () => {
-    let codes = ["200-299", "302-399", 408];
-    let b = false;
+    var codes = ["200-299", "302-399", 408];
+    var b = false;
     codes.some(c => {
       b = checkCodes(333, c);
       return b;
@@ -56,8 +56,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(true);
   });
   it("should work with overlapping ranges ranges", () => {
-    let codes = ["200-299", "222-240", 408];
-    let b = false;
+    var codes = ["200-299", "222-240", 408];
+    var b = false;
     codes.some(c => {
       b = checkCodes(230, c);
       return b;
@@ -65,8 +65,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(true);
   });
   it("should return true if the correct number is a string", () => {
-    let codes = ["200", 302, 600];
-    let b = false;
+    var codes = ["200", 302, 600];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(200, c);
       return b;
@@ -74,8 +74,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the code isn't in the array", () => {
-    let codes = [302, 800];
-    let b = false;
+    var codes = [302, 800];
+    var b = false;
     codes.some(c => {
       b = checkCodes(392, c);
       return b;
@@ -83,8 +83,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the code isn't in the range", () => {
-    let codes = ["200-299"];
-    let b = false;
+    var codes = ["200-299"];
+    var b = false;
     codes.some(c => {
       b = checkCodes(392, c);
       return b;
@@ -92,8 +92,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the range is malformed", () => {
-    let codes = ["200-299-300-400"];
-    let b = false;
+    var codes = ["200-299-300-400"];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -101,8 +101,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the range isn't a number", () => {
-    let codes = ["assljhdjkh"];
-    let b = false;
+    var codes = ["assljhdjkh"];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -110,8 +110,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the range isn't a number but stll has a dash", () => {
-    let codes = ["assljhdjkh-hgsjhs"];
-    let b = false;
+    var codes = ["assljhdjkh-hgsjhs"];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -119,8 +119,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the range includes comma delimited numbers (malformed)", () => {
-    let codes = ["200-299,302"];
-    let b = false;
+    var codes = ["200-299,302"];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -128,8 +128,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the string is blank", () => {
-    let codes = [""];
-    let b = false;
+    var codes = [""];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -137,8 +137,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("should return false if the range is blank", () => {
-    let codes = [""];
-    let b = false;
+    var codes = [""];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -146,8 +146,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("shouldn't match if stringified number doesn't match", () => {
-    let codes = ["202"];
-    let b = false;
+    var codes = ["202"];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;
@@ -155,8 +155,8 @@ describe("when using checkCodes", () => {
     expect(b).toStrictEqual(false);
   });
   it("shouldn't return false if comparing against something other than a string or number", () => {
-    let codes = [{ foo: "bar" }];
-    let b = false;
+    var codes = [{ foo: "bar" }];
+    var b = false;
     codes.forEach(c => {
       b = checkCodes(201, c);
       return b;

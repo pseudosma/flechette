@@ -3,6 +3,8 @@
    "rules": {
       "no-console": false,
       "interface-name" : [true, "never-prefix"],
-      "array-type": false
+      "array-type": false,
+      "no-var-keyword": false,
+      "no-unused-expression": false
    }
 }

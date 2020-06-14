@@ -49,7 +49,7 @@ describe("when using fetchWrap", () => {
   it("should return a separate error for abort", done => {
     window.fetch = () => {
       return new Promise(reject => {
-        let e = new Error("abort");
+        var e = new Error("abort");
         e.name = "AbortError";
         throw e;
       });
@@ -111,7 +111,7 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(200, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -144,7 +144,7 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(500, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -177,14 +177,14 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(408, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
+    var loadingCount = 0;
+    var isLoading = false;
     const toggleLoading = (b: boolean) => {
       isLoading = b;
       ++loadingCount;
     };
 
-    const args = { path: "_", method: "", body: "" };
+    const args = { path: "", method: "", body: "" };
 
     sendAndEvaluate(
       args,
@@ -213,8 +213,8 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(429, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
+    var loadingCount = 0;
+    var isLoading = false;
     const toggleLoading = (b: boolean) => {
       isLoading = b;
       ++loadingCount;
@@ -249,8 +249,8 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(504, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
+    var loadingCount = 0;
+    var isLoading = false;
     const toggleLoading = (b: boolean) => {
       isLoading = b;
       ++loadingCount;
@@ -291,8 +291,8 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(504, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
+    var loadingCount = 0;
+    var isLoading = false;
     const toggleLoading = (b: boolean) => {
       isLoading = b;
       ++loadingCount;
@@ -342,7 +342,7 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(500, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -377,10 +377,10 @@ describe("when using sendAndEvaluate/retry", () => {
         resolve(mockResponse(504, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
-    let hitLocalRetry = false;
-    let hitGlobalRetry = false;
+    var loadingCount = 0;
+    var isLoading = false;
+    var hitLocalRetry = false;
+    var hitGlobalRetry = false;
 
     const toggleLoading = (b: boolean) => {
       isLoading = b;
@@ -465,7 +465,7 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
         resolve(mockResponse(200, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -508,7 +508,7 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
         resolve(mockResponse(500, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -553,10 +553,10 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
         resolve(mockResponse(504, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
-    let retry1 = false;
-    let retry2 = false;
+    var loadingCount = 0;
+    var isLoading = false;
+    var retry1 = false;
+    var retry2 = false;
 
     const toggleLoading = (b: boolean) => {
       isLoading = b;
@@ -653,11 +653,11 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
           });
       }
     };
-    let loadingCount = 0;
-    let isLoading = false;
-    let hitLocalRetry = false;
-    let hitGlobalRetry = false;
-    let hitAnotherRetry = false;
+    var loadingCount = 0;
+    var isLoading = false;
+    var hitLocalRetry = false;
+    var hitGlobalRetry = false;
+    var hitAnotherRetry = false;
 
     const toggleLoading = (b: boolean) => {
       isLoading = b;
@@ -793,8 +793,8 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
         resolve(mockResponse(200, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
+    var loadingCount = 0;
+    var isLoading = false;
 
     const toggleLoading = (b: boolean) => {
       isLoading = b;
@@ -840,8 +840,8 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
         resolve(mockResponse(504, "x"));
       });
     };
-    let loadingCount = 0;
-    let isLoading = false;
+    var loadingCount = 0;
+    var isLoading = false;
 
     const toggleLoading = (b: boolean) => {
       isLoading = b;
@@ -908,7 +908,7 @@ describe("when using sendAndEvaluateMultiple/retryMultiple", () => {
 
 describe("when using retryMultiple", () => {
   it("should not dupe actionsToRebuild", done => {
-    let hitRetry = false;
+    var hitRetry = false;
     configureFlechette({
       instanceName: "z",
       retryActions: [
@@ -986,8 +986,8 @@ describe("when using sendRetryOrAbort", () => {
     );
   });
   it("should abort if timout is reached before success or failure", done => {
-    let sendCount = 0;
-    let abortCount = 0;
+    var sendCount = 0;
+    var abortCount = 0;
     setTimeout(() => {
       expect(sendCount).toStrictEqual(10);
       expect(abortCount).toStrictEqual(10);
@@ -1012,8 +1012,8 @@ describe("when using sendRetryOrAbort", () => {
     );
   });
   it("should only abort if it has a zero retry count", done => {
-    let sendCount = 0;
-    let abortCount = 0;
+    var sendCount = 0;
+    var abortCount = 0;
     setTimeout(() => {
       expect(sendCount).toStrictEqual(1);
       expect(abortCount).toStrictEqual(1);
@@ -1067,7 +1067,7 @@ describe("when using send", () => {
         resolve(mockResponse(200, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1100,7 +1100,7 @@ describe("when using send", () => {
         resolve(mockResponse(200, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1134,7 +1134,7 @@ describe("when using send", () => {
         resolve(mockResponse(500, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1167,7 +1167,7 @@ describe("when using send", () => {
         // do not resolve
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1210,7 +1210,7 @@ describe("when using send", () => {
         // do not resolve
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1245,7 +1245,7 @@ describe("when using send", () => {
         //do not resolve
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1292,7 +1292,7 @@ describe("when using send", () => {
           });
       }
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1352,7 +1352,7 @@ describe("when using send", () => {
           });
       }
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1395,7 +1395,7 @@ describe("when using send", () => {
         resolve(mockResponse(500, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1438,7 +1438,7 @@ describe("when using send", () => {
         //do not resolve
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1492,7 +1492,7 @@ describe("when using send", () => {
         resolve(mockResponse(900, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };
@@ -1540,7 +1540,7 @@ describe("when using send", () => {
         resolve(mockResponse(900, "x"));
       });
     };
-    let loadingCount = 0;
+    var loadingCount = 0;
     const toggleLoading = () => {
       ++loadingCount;
     };

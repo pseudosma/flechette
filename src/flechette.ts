@@ -146,7 +146,7 @@ export const getFlechetteInstance = (
     if (s) {
       return s;
     } else {
-      throw "failed to find flechette instance";
+      throw new Error("failed to find flechette instance");
     }
   } catch {
     console.warn(

@@ -29,10 +29,10 @@ export const send = (
   waitingFunc?: ToggleFunc,
 ) => {
   if (Array.isArray(args)) {
-    var timeout = 0;
-    var maxRetries = 0;
-    var sendFunc: SendAndEvalFunc;
-    var abortFunc;
+    var timeout = 0; // eslint-disable-line no-var
+    var maxRetries = 0; // eslint-disable-line no-var
+    var sendFunc: SendAndEvalFunc; // eslint-disable-line no-var
+    var abortFunc; // eslint-disable-line no-var
     const instancesRef: Array<FlechetteController> = [];
 
     args.forEach((a) => {
@@ -85,10 +85,10 @@ export const initialArgSetup = (flechetteInstance: FlechetteController, args: Se
 
 const buildAbortResponse = (args: SendArgs) => {
   return {
-    success: false,
-    statusCode: 500,
     response: "Request Timed Out",
-    sent: args
+    sent: args,
+    statusCode: 500,
+    success: false
   };
 }
 
@@ -136,7 +136,7 @@ export const sendRetryOrAbort = (
       waitingFunc && waitingFunc(false);
       failureFunc(failureResponse);
     }, (timeout * maxRetryCount) + timeout));
-    for (let i = 1; i <= maxRetryCount; ++i) {
+    for (var i = 1; i <= maxRetryCount; ++i) {
       // then create the abort + retry scenarios
       t.push(
         setTimeout(() => {
@@ -192,7 +192,7 @@ export const sendAndEvaluateMultiple: SendAndEvalFunc = (
 ) => {
   if (Array.isArray(args)) {
     const promises: Array<Promise<NetResponse>> = [];
-    var responses: Array<FlechetteResponse> = []; // var since retry may change
+    const responses: Array<FlechetteResponse> = []; // var since retry may change
 
     waitingFunc && waitingFunc(true);
     args.forEach((a) => {
@@ -204,7 +204,7 @@ export const sendAndEvaluateMultiple: SendAndEvalFunc = (
         const ev = evaluateResponse(r, flechetteInstance);
         responses.push(ev);
       });
-      if (responses.every((r) => { return r.success })) {
+      if (responses.every((r) => r.success )) {
         waitingFunc && waitingFunc(false);
         successFunc(responses);
       } else {
@@ -268,7 +268,7 @@ export const retry = (
       finalize();
       failureFunc(rVal);
     };
-    // let retryAction determine when waiting is over
+    // var retryAction determine when waiting is over
     ra[0].action(
       response, 
       sf, 
@@ -312,16 +312,16 @@ export const retryMultiple = (
             ra[0]
           );
           // now add this to a list to change back later
-          const a = actionsToRebuild.find(
+          const atr = actionsToRebuild.find(
             (a) => { 
               return (a.code === (ra[0] as RetryAction).code 
               && a.instanceName === fi.instanceName)
             }
           );
-          if (!a) {
+          if (!atr) {
             actionsToRebuild.push({
-              instanceName: fi.instanceName, 
               code: ra[0].code,
+              instanceName: fi.instanceName, 
               pathsToIgnore: originalPathsToIgnore
             });
           }
@@ -350,14 +350,14 @@ export const retryMultiple = (
       // rebuild any actions we've removed
       actionsToRebuild.forEach((atr) => {
         const fi = getFlechetteInstance(atr.instanceName);
-        const ra: RetryAction|undefined = fi.retryActions.find((ra) => {
+        const retA: RetryAction|undefined = fi.retryActions.find((ra) => {
           return ra.code === atr.code;
         });
-        (ra) && (ra.pathsToIgnore = atr.pathsToIgnore);
+        (retA) && (retA.pathsToIgnore = atr.pathsToIgnore);
       });
       // finally, call the success or failure func
       waitingFunc && waitingFunc(false);
-      if (responses.every((r) => { return r.success })) {
+      if (responses.every((r) => r.success )) {
         successFunc(responses);
       } else {
         failureFunc(responses);
@@ -371,8 +371,8 @@ export const evaluateResponse = (
   resp: NetResponse,
   f: FlechetteController
 ): FlechetteResponse => {
-  let s: boolean = false;
-  let r;
+  var s: boolean = false;
+  var r;
   try {
     // try to parse it to an object if it is json
     r = JSON.parse(resp.response);
@@ -398,7 +398,7 @@ export const fetchWrap = (args: SendArgs): Promise<NetResponse> => {
       return { response: res.d, statusCode: res.sc, sent: args };
     })
     .catch(err => {
-      let r = "Unknown Error: " + err;
+      var r = "Unknown Error: " + err;
       if (err.name === "AbortError") {
         r = "Request Aborted";
       }
