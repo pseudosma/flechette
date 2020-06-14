@@ -1,4 +1,5 @@
-import { configureFlechette, Flechette, getFlechetteInstance } from "../index";
+import { configureFlechette, Flechette } from "../index";
+import { getFlechetteInstance } from "../flechette";
 import {
   deleteStorage,
   removeFromStorage,
@@ -7,12 +8,12 @@ import {
 
 describe("when using configureFlechette", () => {
   it("should allow default configuration with an empty object", () => {
-    configureFlechette({});
+    configureFlechette();
     expect((window as any)["appConfig"]).not.toBeNull();
     const f: Flechette = retrieveFromStorage("flechette", "appConfig");
     expect(getFlechetteInstance()).toStrictEqual(f);
     expect(f).not.toBeNull();
-    expect(f.successCodes).toStrictEqual(["200-299"]);
+    expect(f.successCodes).toStrictEqual(["200-399"]);
     expect(f.retryActions!.length).toStrictEqual(3);
     expect(f.timeout).toStrictEqual(30000);
     expect(f.maxTimeoutRetryCount).toStrictEqual(2);
@@ -56,7 +57,7 @@ describe("when using configureFlechette", () => {
       headers: h,
       instanceName: "custom"
     });
-    const f: Flechette = retrieveFromStorage("custom", "appConfig");
+    let f: Flechette = retrieveFromStorage("custom", "appConfig");
     expect(getFlechetteInstance("custom")).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["100-199", 300]);
@@ -66,6 +67,14 @@ describe("when using configureFlechette", () => {
     expect(f.baseUrl).toStrictEqual("foo");
     expect(f.headers).not.toBeUndefined;
     expect(f.instanceName).toStrictEqual("custom");
+    // now make sure it can be reconfigured
+    configureFlechette({
+      instanceName: "custom"
+    });
+    f = retrieveFromStorage("custom", "appConfig");
+    expect(getFlechetteInstance("custom")).toStrictEqual(f);
+    expect(f).not.toBeNull();
+    expect(f.successCodes).toStrictEqual(["200-399"]);
   });
   afterAll(() => {
     removeFromStorage("flechette", "appConfig");
@@ -75,17 +84,30 @@ describe("when using configureFlechette", () => {
 });
 
 describe("when using getFlechetteInstance", () => {
-  it("should create a flechette instance if none exist", () => {
+  it("should create a flechette instance if get throws an error", () => {
     const f = getFlechetteInstance();
     expect(f).not.toBeNull();
-    expect(f.successCodes).toStrictEqual(["200-299"]);
+    expect(f.successCodes).toStrictEqual(["200-399"]);
     expect(f.retryActions.length).toStrictEqual(3);
     expect(f.timeout).toStrictEqual(30000);
     expect(f.maxTimeoutRetryCount).toStrictEqual(2);
     expect(f.baseUrl).toStrictEqual("");
     expect(f.headers).toBeUndefined;
     expect(f.instanceName).toStrictEqual("flechette");
-    // cleanup
+  });
+  it("should create a flechette instance if the intance is not found", () => {
+    const f = getFlechetteInstance("meh");
+    expect(f).not.toBeNull();
+    expect(f.successCodes).toStrictEqual(["200-399"]);
+    expect(f.retryActions.length).toStrictEqual(3);
+    expect(f.timeout).toStrictEqual(30000);
+    expect(f.maxTimeoutRetryCount).toStrictEqual(2);
+    expect(f.baseUrl).toStrictEqual("");
+    expect(f.headers).toBeUndefined;
+    expect(f.instanceName).toStrictEqual("meh");
+  });
+  afterEach(() => {
+    removeFromStorage("meh", "appConfig");
     removeFromStorage("flechette", "appConfig");
     deleteStorage("appConfig");
   });

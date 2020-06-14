@@ -1,93 +1,76 @@
 import {
   addToStorage,
   createNewStorage,
-  retrieveFromStorage,
+  retrieveFromStorage
 } from "storage-deck";
 
-import { flechetteFetch } from "./senders";
+import { send } from "./senders";
 
 export const reservedKeyName = "flechette";
 const reservedStorageName = "appConfig";
 const defaultTimeout = 30000;
 const defaultTimeoutRetryCount = 2;
-const defaultSuccessCodes: Array<any> = ["200-299"];
+const defaultSuccessCodes: Array<any> = ["200-399"];
 const defaultRetryActions: Array<RetryAction> = [
   {
     action: (
       response: FlechetteResponse,
-      sent: SendArgs,
-      waitingFunc: ToggleFunc,
       successFunc: ResponseFunc,
       failureFunc: ResponseFunc
     ) => {
-      flechetteFetch(sent, waitingFunc, successFunc, failureFunc);
+      send(response.sent, successFunc, failureFunc);
     },
     code: 408
   },
   {
     action: (
       response: FlechetteResponse,
-      sent: SendArgs,
-      waitingFunc: ToggleFunc,
       successFunc: ResponseFunc,
       failureFunc: ResponseFunc
     ) => {
-      flechetteFetch(sent, waitingFunc, successFunc, failureFunc);
+      send(response.sent, successFunc, failureFunc);
     },
     code: 429
   },
   {
     action: (
       response: FlechetteResponse,
-      sent: SendArgs,
-      waitingFunc: ToggleFunc,
       successFunc: ResponseFunc,
       failureFunc: ResponseFunc
     ) => {
-      flechetteFetch(sent, waitingFunc, successFunc, failureFunc);
+      send(response.sent, successFunc, failureFunc);
     },
     code: 504
   }
 ];
 
-export enum CachingType {
-  Window = 0,
-  Session = 1,
-  Local = 2
-}
-
-export interface CachingScheme {
-  type: CachingType;
-  expiration: Date;
-}
-
 export interface NetResponse {
   statusCode: number;
   response: string;
+  sent: SendArgs;
 }
 
 export interface FlechetteResponse {
   success: boolean;
   statusCode: number;
   response: any;
-  isCachedResponse: boolean;
+  sent: SendArgs;
 }
 
 export interface SendArgs extends RequestInit {
   path: string;
   instanceName?: string;
-  cachingScheme?: CachingScheme;
-  retryActions?: Array<RetryAction>; //single use retry acion
+  retryActions?: Array<RetryAction>; // single use retry action
 }
 
-export type ResponseFunc = (response: FlechetteResponse) => void;
+export type ResponseFunc = (
+  response: FlechetteResponse | Array<FlechetteResponse>
+) => void;
 
 export type ToggleFunc = (isWaiting: boolean) => void;
 
 export type RetryFunc = (
   response: FlechetteResponse,
-  sent: SendArgs,
-  waitingFunc: ToggleFunc,
   successFunc: ResponseFunc,
   failureFunc: ResponseFunc
 ) => void;
@@ -95,6 +78,7 @@ export type RetryFunc = (
 export interface RetryAction {
   code: number;
   action: RetryFunc;
+  pathsToIgnore?: Array<string>;
 }
 
 export interface Flechette {
@@ -113,7 +97,7 @@ export class FlechetteController {
   public timeout: number = defaultTimeout;
   public maxTimeoutRetryCount: number = defaultTimeoutRetryCount;
   public baseUrl: string = "";
-  public headers: Headers | string[][] | Record<string, string> | undefined
+  public headers: Headers | string[][] | Record<string, string> | undefined;
   public instanceName: string = reservedKeyName;
   public abortController = new AbortController();
 
@@ -137,9 +121,6 @@ export class FlechetteController {
       this.headers = props.headers;
     }
     if (props.instanceName) {
-      if (props.instanceName.includes("-")) {
-        throw new Error("Dashes (-) cannot be used in flechette instance names");
-      }
       this.instanceName = props.instanceName;
     }
   }
@@ -149,10 +130,11 @@ export class FlechetteController {
   }
 }
 
-export const configureFlechette = (i: Flechette) => {
-  const f = new FlechetteController(i);
+export const configureFlechette = (i?: Flechette): FlechetteController => {
+  const f = new FlechetteController(i ? i : {});
   createNewStorage(reservedStorageName);
-  addToStorage({ key: f.instanceName, value: f}, reservedStorageName);
+  addToStorage({ key: f.instanceName, value: f }, reservedStorageName);
+  return f;
 };
 
 export const getFlechetteInstance = (
@@ -160,12 +142,16 @@ export const getFlechetteInstance = (
 ): FlechetteController => {
   const i = instanceName ? instanceName : reservedKeyName;
   try {
-    return retrieveFromStorage(i, reservedStorageName);
+    const s = retrieveFromStorage(i, reservedStorageName);
+    if (s) {
+      return s;
+    } else {
+      throw "failed to find flechette instance";
+    }
   } catch {
     console.warn(
       "No active flechette instance found. Creating a new instance named " + i
     );
-    configureFlechette({ instanceName: i });
-    return retrieveFromStorage(i, reservedStorageName);
+    return configureFlechette({ instanceName: i });
   }
 };

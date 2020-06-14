@@ -1,25 +1,4 @@
-import {  
-  CachingType,
-  FlechetteResponse,
-  reservedKeyName,
-  RetryAction,
-  SendArgs
-} from "./flechette"
-
-import {
-  addToStorage,
-  addToLocalStorage,
-  addToSessionStorage,
-  removeFromLocalStorage,
-  removeFromSessionStorage,
-  removeFromStorage,
-  retrieveFromLocalStorage,
-  retrieveFromSessionStorage,
-  retrieveFromStorage,
-  StorageKeyValuePair
-} from "storage-deck";
-
-const reservedCacheName = "appCache";
+import { SendArgs, RetryAction } from "./flechette";
 
 export const checkCodes = (
   incomingCode: number,
@@ -60,143 +39,86 @@ export const checkCodes = (
   return false;
 };
 
-export const buildSearhRegEx = (name?: string, path?: string): RegExp => {
-  const n: string = name ? name : reservedKeyName;
-  const p: string = path ? path : ".*?";
-  return new RegExp(n + "\-" + p + "\-[0-9]*"); // instanceName-path-expiration
-}
-
-export const clearFlechetteInstanceCache = (name?: string) => {
-  const re = buildSearhRegEx(name);
-  // now check all storage
-  removeFromStorage(re, reservedCacheName);
-  removeFromLocalStorage(re);
-  removeFromSessionStorage(re);
-};
-
-export const cacheResponseData = (sendArgs: SendArgs, response: FlechetteResponse) => {
-  if (sendArgs.cachingScheme) {
-    const i =  sendArgs.instanceName ? sendArgs.instanceName : reservedKeyName;
-    const k = i + "-" + sendArgs.path + "-" + Date.now();
-    switch (sendArgs.cachingScheme.type) {
-      case CachingType.Window: {
-        addToStorage({key: k, value: response}, reservedCacheName);
-        break;
-      }
-      case CachingType.Session: {
-        addToSessionStorage({key: k, value: response});
-        break;
-      }
-      case CachingType.Local: {
-        addToLocalStorage({key: k, value: response});
-        break;
-      }
-    }
-  }
-};
-
-export const evaluateAndReturnCachedData = (getFunc: any, deleteFunc: any): any => {
-  const r: StorageKeyValuePair[]|null  = getFunc();
-  if (r !== null) {
-    // a cached entry was found, now find out if it's expired
-    const dt = Date.now();
-    const a: string[] = r[0].key.split("-"); // should only be one, but this call returns an arrya
-    const exp: string | undefined = a.pop(); 
-    if (exp) {
-      if (dt < parseInt(exp, 10)) {
-        // not expired, return this value
-        return r[0].value;
-      } else {
-        // it's expired so delete it and fall through to return null
-        deleteFunc();
-      }
-    }
-  }
-  return null;
-}
-
-export const checkForCachedData = (sendArgs: SendArgs): FlechetteResponse|null => {
-  if (sendArgs.cachingScheme) {
-    const i =  sendArgs.instanceName ? sendArgs.instanceName : reservedKeyName;
-    const s = buildSearhRegEx(i, sendArgs.path);
-    switch (sendArgs.cachingScheme.type) {
-      case CachingType.Window: {
-        return evaluateAndReturnCachedData(
-          () => { retrieveFromStorage(s, reservedCacheName); },
-          () => { removeFromStorage(s, reservedCacheName); }
-        );
-      }
-      case CachingType.Session: {
-        // this should be json saved as a string
-        const r = evaluateAndReturnCachedData(
-          () => { retrieveFromSessionStorage(s); },
-          () => { removeFromSessionStorage(s); }
-        );
-        if (r !== null) {
-          return JSON.parse(r);
-        }
-        break;
-      }
-      case CachingType.Local: {
-        const r = evaluateAndReturnCachedData(
-          () => { retrieveFromLocalStorage(s); },
-          () => { removeFromLocalStorage(s); }
-        );
-        if (r !== null) {
-          return JSON.parse(r);
-        }
-        break;
-      }
-    }
-  }
-  return null;
-};
-
 export const combineHeaders = (
-  localHeaders: Headers, 
-  globalHeaders: Headers): Headers => {
-  //headers on the send args override those of the same key on the instance
+  localHeaders: Headers | string[][] | Record<string, string> | undefined,
+  globalHeaders: Headers | string[][] | Record<string, string> | undefined
+): Headers => {
+  // headers on the send args override those of the same key on the instance
+  let newHeaders: Headers = new Headers();
+  if (globalHeaders) {
+    // force conversion to Headers
+    const gh: Headers = new Headers(globalHeaders);
+    for (let pair of gh.entries()) {
+      newHeaders.append(pair[0], pair[1]);
+    }
+  }
+  if (localHeaders) {
+    const lh: Headers = new Headers(localHeaders);
+    for (let pair of lh.entries()) {
+      newHeaders.append(pair[0], pair[1]);
+    }
+  }
+  return newHeaders;
 };
 
 export const determineRetryAction = (
   statusCode: number,
-  localRetryActions: Array<RetryAction>|undefined, 
-  globalRetryActions: Array<RetryAction>|undefined): [RetryAction|undefined, number] => { 
-    // A retry action on the send args should override the flechetteInstance's version
-    var action: RetryAction|undefined = undefined;
-    var i: number = -1;
-    // first check if there's an existing action in the instance
-    if (
-      Array.isArray(globalRetryActions) &&
-      globalRetryActions.length > 0
-    ) {
-      i = globalRetryActions.findIndex(
-        ra => ra.code === statusCode
-      );
-      if (i > -1) {
-        action = Object.assign({},globalRetryActions[i]);
-        // shallow clone it since it will be spliced out later to avoid an infinite loop
+  sentArgs: SendArgs,
+  globalRetryActions: Array<RetryAction> | undefined
+): [RetryAction | undefined, number] => {
+  // A retry action on the send args should override the flechetteInstance's version
+  let action: RetryAction | undefined = undefined;
+  let i: number = -1;
+  // first check if there's an existing action in the instance
+  if (Array.isArray(globalRetryActions) && globalRetryActions.length > 0) {
+    i = globalRetryActions.findIndex(ra => ra.code === statusCode);
+    if (i > -1) {
+      // okay, we have a retryAction matching this code.
+      // now make sure it's not a path we want to ignore
+      if (ignoreRetryPath(sentArgs.path, globalRetryActions[i])) {
+        i = -1; // make it seem like there is no match
+      } else {
+        action = globalRetryActions[i];
       }
     }
-    // next check if there's an override
-    if (
-      Array.isArray(localRetryActions) &&
-      localRetryActions.length > 0
-    ) {
-      const newAction = localRetryActions.find(
-        ra => ra.code === statusCode
-      );
-      if (newAction) {
-        action = newAction;
+  }
+  // next check if there's an override
+  if (
+    Array.isArray(sentArgs.retryActions) &&
+    sentArgs.retryActions.length > 0
+  ) {
+    const newActionIndex = sentArgs.retryActions.findIndex(
+      ra => ra.code === statusCode
+    );
+    if (newActionIndex > -1) {
+      if (
+        !ignoreRetryPath(sentArgs.path, sentArgs.retryActions[newActionIndex])
+      ) {
+        // make sure it's not a path we want to ignore
+        // this would be a weird use-case but honor
+        // the same rules for local as global
+        action = sentArgs.retryActions[newActionIndex];
         // in case of overridden retryAction, the intention is for this to be a one
         // time use, so we do not want to interfere with the default retry code in
         // case it happens again.
-        // Make it look like there is not one in the list by .
         i = -1;
+        // now remove it from our local list
+        sentArgs.retryActions.splice(newActionIndex, 1);
       }
     }
-    return [action,i];
+  }
+  return [action, i];
 };
 
-
-
+export const ignoreRetryPath = (
+  path: string,
+  retryAction: RetryAction
+): boolean => {
+  const retVal: boolean = false;
+  if (Array.isArray(retryAction.pathsToIgnore)) {
+    if ((retryAction.pathsToIgnore as Array<string>).includes(path)) {
+      return true;
+    }
+  }
+  return retVal;
+};

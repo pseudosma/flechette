@@ -3,7 +3,6 @@ import {
   Flechette,
   FlechetteController,
   FlechetteResponse,
-  getFlechetteInstance,
   ResponseFunc,
   RetryAction,
   RetryFunc,
@@ -11,21 +10,17 @@ import {
   ToggleFunc
 } from "./flechette";
 
-import { flechetteFetch } from "./senders";
-
-import { clearFlechetteInstanceCache } from "./utils";
+import { send } from "./senders";
 
 export {
-  clearFlechetteInstanceCache,
   configureFlechette,
   Flechette,
   FlechetteController,
-  flechetteFetch,
   FlechetteResponse,
-  getFlechetteInstance,
   ResponseFunc,
   RetryAction,
   RetryFunc,
+  send,
   SendArgs,
   ToggleFunc
 };
