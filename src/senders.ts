@@ -26,8 +26,8 @@ export const send = (
   args: SendArgs | Array<SendArgs>,
   successFunc: ResponseFunc,
   failureFunc: ResponseFunc,
-  waitingFunc?: ToggleFunc,
-) => {
+  waitingFunc?: ToggleFunc
+): void => {
   if (Array.isArray(args)) {
     var timeout = 0; // eslint-disable-line no-var
     var maxRetries = 0; // eslint-disable-line no-var
@@ -53,7 +53,6 @@ export const send = (
       f.abortCurrentFetch();
       }) 
     };
-
   } else {
     const flechetteInstance = getFlechetteInstance(args.instanceName);
     initialArgSetup(flechetteInstance, args);
