@@ -28,7 +28,8 @@ export interface Flechette {
 ---
 **NOTE**
 
-  If you do not specify an instanceName, the name "flechette" will be used.
+  * If you do not specify an instanceName, the name "flechette" will be used.
+  * successCodes accepts both individual numbers or a range of numbers as a string separated by a hyphen.
 
 ---
 
@@ -73,7 +74,7 @@ export interface RetryAction {
 ---
 **NOTE**
 
-  The ***pathsToIgnore*** property is used to indicate any endpoint that should not use this retry action. During retries, Flechette will temporarily put the current path in the RetryAction to prevent infinite looping if the same request has already encountered this same error code. After the successFunc or failureFunc is ran, it will restore the ***pathsToIgnore*** to its original value.
+  The *pathsToIgnore* property is used to indicate any endpoint that should not use this retry action. During retries, Flechette will temporarily put the current path in the RetryAction to prevent infinite looping if the same request has already encountered this same error code. After the successFunc or failureFunc is ran, it will restore the *pathsToIgnore* to its original value.
 
 ---
 
@@ -120,8 +121,8 @@ export interface SendArgs extends RequestInit {
 ---
 **NOTE**
 
-* The **instanceName** on *SendArgs* must match a flechette instance. If the value is omitted, the default name "flechette" is assumed.
-* The *retryActions* and *headers* associated with the *SendArgs* will override the Flechette instance's retryActions and headers.
+* The *instanceName* on **SendArgs** must match a flechette instance. If the value is omitted, the default name "flechette" is assumed.
+* The *retryActions* and *headers* associated with the **SendArgs** will override the Flechette instance's retryActions and headers.
 * As each SendArg's *retryAction* is executed, it is removed from the object to prevent looping in the case that the same response is received twice.
 
 ---
@@ -157,34 +158,44 @@ export interface FlechetteResponse {
 
 # Using "send"
 
-* send will return an array of responses if you pass in an array of requests
+Flechette's ***send*** allows sending multiple requests together at once. If an array of SendArgs is passed into the function, it'll return (through its callbacks) an array of FlechetteResponses rather than a single FlechetteResponse.
 
 ## Order of operations
 
-* add base url to the request
-* combine or override headers
-* toggle waiting on
-* fetch all requests
-* evaluate the response(s) to determine if success or failure
-* If failure, check if any retry actions are applicable
-  * Local retries override global ones
-  * Retry any failed actions. If all are successful after all retries , the request uses success callback, otherwise use failure callback.
-* toggle waiting off
-* run success or failure callback
+The events that occur within a ***send*** call are:
+
+1. The base URL from the FlechetteController is added to the request, if it isn't already present.
+2. The headers included with the SendArgs are combined with the FlechetteController's headers. If any are duplicates, the version from SendArgs overrides the instance's base headers.
+3. The waiting callback is triggered, passing in *true*.
+4. Fetch is called for all SendArgs.
+5. All responses are evaluated based on the FlechetteController's *successCodes* to determine success or failure.
+6. If failure occurs based on the codes, check if any retry actions are applicable
+  * RetryActions in the SendArgs are used before RetryActions on the FlechetteController.  
+  * Retry any failed actions. If all are successful after all retries, the request ends using the success callback, otherwise the failure callback is used.
+7. The waiting callback is triggered, passing in *false*.
+8. Run success or failure callback if no retries happened earlier.
+
+* If the requests go past the timeout limit before completing these steps, it'll abort the original requests. It can optionally retry the whole request again, but if there is never a network response, the failure/end waiting callbacks are ran.
 
 # Best Practices
 
 ## Do's
 
-* always call the success or failure callback when done with a retry action, otherwise it'll appear to be waiting forever to complete
+* If your RetryAction just needs to resend the data, call ***send*** again from inside your RetryAction, passing the SendArgs, success, and failure callbacks back in. Flechette is designed around this kind of recursion for retries and has mechanisms in place to prevent infinite loops.
 
-* if your retry action just needs to retry, pass the vars into a new send call. It's designed to allow recursion w/o looping
+* A RetryAction does not need to call ***send*** again, but it must always end by calling either the success or failure callback passed in. Always signal to Flechette that the action is finished by calling success or failure, otherwise it'll appear to be waiting forever to complete.
+  
+* The optional waiting callback on ***send*** is meant to be used to lock UI elements while the current request is processing. Making an identical request before the results are back from the first can produce unexpected results.
+  
+* Counting the number of waiting callbacks can be used as a method to keep track of timeouts and the retries associated with those. Each retried timeout with will trigger a new ***send*** operation that'll fire the waiting callback again, passing in *true*.
 
 ## Don'ts
 
-* Don't reuse the same sendArgs for multiple calls. Flechette will modify the original sendArgs while processing (adding baseUrl to path, removing retryActions), so it's best to throw them away after use.
+* Don't reuse the same SendArgs object for all of the outgoing requests. Flechette will modify the original SendArgs while processing (adding baseUrl to path, removing RetryActions), so it's best to throw them away after use.
 
-* if using local retry actions, don't reuse the same array of RetryActions across multiple sendArgs. Instead create new ones for each call. Global retryActions use the "pathsToIgnore" prop to prevent looping and enforce the "one time use" but local actions just remove retry actions as they are acted upon to enforce "one time use". Reusing these on multiple sendArgs without shallow cloning each can result in some retry actions being
+* If using local retry actions, don't reuse the same array of RetryActions across multiple copies of SendArgs. Instead create new ones for each call. Global RetryActions use the "pathsToIgnore" prop to prevent looping and enforce the single use but local actions just remove retry actions as they are acted upon to enforce single use. Reusing these on multiple SendArgs without cloning each object can result in some RetryActions being lost across calls.
 
-* It is possible to change values by inspecting the window-level objects but doing so in the middle of network calls (like in a retry action) can produce unexpected results. Instead, if you need to change a Flechette instance's config settings, use configureFlechette with the old instance name as if you're creating a new config. 
+* Avoid manipulating the window-level FlechetteController objects directly. Instead, always call ***configureFlechette***, even for simple updates to an existing Flechette instance.
+  
+* Flechette manipulates the FlechetteController during ***send*** in order to track retries. Because it also allows recursion, it doesn't have any built-in mutex locking mechanisms that'd prevent you from calling ***configureFlechette*** in the middle of a ***send*** operation. Reconfiguring in the middle of any pending ***send*** calls can produce unexpected results.
 

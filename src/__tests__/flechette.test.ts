@@ -1,4 +1,4 @@
-import { configureFlechette, Flechette } from "../index";
+import { configureFlechette, FlechetteController } from "../index";
 import { getFlechetteInstance } from "../flechette";
 import {
   deleteStorage,
@@ -10,7 +10,7 @@ describe("when using configureFlechette", () => {
   it("should allow default configuration with an empty object", () => {
     configureFlechette();
     expect((window as any)["appConfig"]).not.toBeNull();
-    const f: Flechette = retrieveFromStorage("flechette", "appConfig");
+    const f: FlechetteController = retrieveFromStorage("flechette", "appConfig");
     expect(getFlechetteInstance()).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["200-399"]);
@@ -57,7 +57,7 @@ describe("when using configureFlechette", () => {
       headers: h,
       instanceName: "custom"
     });
-    var f: Flechette = retrieveFromStorage("custom", "appConfig");
+    var f: FlechetteController = retrieveFromStorage("custom", "appConfig");
     expect(getFlechetteInstance("custom")).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["100-199", 300]);
