@@ -1,4 +1,4 @@
-# Flechette  ![build](https://img.shields.io/travis/pseudosma/flechette) ![coverage](https://img.shields.io/coveralls/github/pseudosma/flechette) ![license](https://img.shields.io/npm/l/flechette)
+# Flechette  ![build](https://img.shields.io/travis/com/pseudosma/flechette) ![coverage](https://img.shields.io/coveralls/github/pseudosma/flechette) ![license](https://img.shields.io/npm/l/flechette)
 
 ## Features
 
