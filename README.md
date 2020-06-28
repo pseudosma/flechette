@@ -49,7 +49,7 @@ Use Flechette's ***send*** method instead of fetch:
     { path: "https://www.google.com", method: "GET" },
     (response: FlechetteResponse) => { console.log("success") },
     (response: FlechetteResponse) => { console.log("failure") },
-    (isWaiting: boolan) => {
+    (isWaiting: boolean) => {
       if (isWaiting) {
         console.log("began waiting on response") 
       } else {
