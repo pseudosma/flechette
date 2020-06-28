@@ -1,7 +1,7 @@
 {
   "name": "flechette",
   "version": "0.1.0",
-  "description" : "A highly configurable wrapper for Fetch API that supports programmatic retries and completely obfuscates promise handling.",
+  "description": "A highly configurable wrapper for Fetch API that supports programmatic retries and completely obfuscates promise handling.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "homepage": "https://github.com/pseudosma/flechette",
@@ -30,13 +30,14 @@
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "jest --config jestconfig.json",
-    "coverallsTest" : "jest --config jestconfig.json && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "coverallsTest": "jest --config jestconfig.json && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "build": "tsc",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint"
   },
   "devDependencies": {
     "@types/jest": "^24.9.0",
+    "coveralls": "^3.1.0",
     "jest": "^24.9.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.3.0",
