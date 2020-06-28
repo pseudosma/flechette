@@ -10,7 +10,10 @@ describe("when using configureFlechette", () => {
   it("should allow default configuration with an empty object", () => {
     configureFlechette();
     expect((window as any)["appConfig"]).not.toBeNull();
-    const f: FlechetteController = retrieveFromStorage("flechette", "appConfig");
+    const f: FlechetteController = retrieveFromStorage(
+      "flechette",
+      "appConfig"
+    );
     expect(getFlechetteInstance()).toStrictEqual(f);
     expect(f).not.toBeNull();
     expect(f.successCodes).toStrictEqual(["200-399"]);

@@ -9,11 +9,7 @@ import {
   ToggleFunc
 } from "./flechette";
 
-import { 
-  checkCodes,
-  combineHeaders,
-  determineRetryAction 
-} from "./utils";
+import { checkCodes, combineHeaders, determineRetryAction } from "./utils";
 
 export type SendAndEvalFunc = (
   args: SendArgs | Array<SendArgs>,
@@ -35,7 +31,7 @@ export const send = (
     var abortFunc; // eslint-disable-line no-var
     const instancesRef: Array<FlechetteController> = [];
 
-    args.forEach((a) => {
+    args.forEach(a => {
       const flechetteInstance = getFlechetteInstance(a.instanceName);
       instancesRef.push(flechetteInstance);
       initialArgSetup(flechetteInstance, a);
@@ -48,10 +44,11 @@ export const send = (
       }
     });
     sendFunc = sendAndEvaluateMultiple;
-    abortFunc = () => { instancesRef.forEach((f) => {
-      // perform all abort actions
-      f.abortCurrentFetch();
-      }) 
+    abortFunc = () => {
+      instancesRef.forEach(f => {
+        // perform all abort actions
+        f.abortCurrentFetch();
+      });
     };
   } else {
     const flechetteInstance = getFlechetteInstance(args.instanceName);
@@ -59,7 +56,9 @@ export const send = (
     timeout = flechetteInstance.timeout;
     maxRetries = flechetteInstance.maxTimeoutRetryCount;
     sendFunc = sendAndEvaluate;
-    abortFunc = () => { flechetteInstance.abortCurrentFetch() };
+    abortFunc = () => {
+      flechetteInstance.abortCurrentFetch();
+    };
   }
   sendRetryOrAbort(
     args,
@@ -67,20 +66,23 @@ export const send = (
     maxRetries,
     abortFunc,
     sendFunc,
-    successFunc, 
+    successFunc,
     failureFunc,
     waitingFunc
   );
 };
 
-export const initialArgSetup = (flechetteInstance: FlechetteController, args: SendArgs) => {
+export const initialArgSetup = (
+  flechetteInstance: FlechetteController,
+  args: SendArgs
+) => {
   args.signal = flechetteInstance.abortController.signal;
   if (args.path && !args.path.includes(flechetteInstance.baseUrl)) {
     args.path = flechetteInstance.baseUrl + args.path;
   }
   // if the SendArgs has headers, use those. Otherwise, use flechette's
   args.headers = combineHeaders(args.headers, flechetteInstance.headers);
-}
+};
 
 const buildAbortResponse = (args: SendArgs) => {
   return {
@@ -89,7 +91,7 @@ const buildAbortResponse = (args: SendArgs) => {
     statusCode: 500,
     success: false
   };
-}
+};
 
 export const sendRetryOrAbort = (
   args: SendArgs | Array<SendArgs>,
@@ -102,7 +104,7 @@ export const sendRetryOrAbort = (
   waitingFunc?: ToggleFunc
 ) => {
   const t: Array<number> = []; // will be the timeout handlers
-  
+
   const sf: ResponseFunc = res => {
     // wrap this so our timeout is cleared if sendAndEvaluate finishes
     t.forEach(o => {
@@ -116,25 +118,29 @@ export const sendRetryOrAbort = (
     });
     failureFunc(res);
   };
-  
+
   if (typeof timeout === "number" && timeout > 0) {
     // need to create all timeouts upfront so they can easily be cleared on success of one
     // first, create the final timeout
-    t.push(setTimeout(() => {
-      abortFunc();
-      // since this is the final timeout, run failureFunc
-      var failureResponse: FlechetteResponse | Array<FlechetteResponse>;
-      if (Array.isArray(args)) {
-        failureResponse = [];
-        args.forEach((a) => {
-          (failureResponse as Array<FlechetteResponse>).push(buildAbortResponse(a));
-        });
-      } else {
-        failureResponse = buildAbortResponse(args);
-      }
-      waitingFunc && waitingFunc(false);
-      failureFunc(failureResponse);
-    }, (timeout * maxRetryCount) + timeout));
+    t.push(
+      setTimeout(() => {
+        abortFunc();
+        // since this is the final timeout, run failureFunc
+        var failureResponse: FlechetteResponse | Array<FlechetteResponse>;
+        if (Array.isArray(args)) {
+          failureResponse = [];
+          args.forEach(a => {
+            (failureResponse as Array<FlechetteResponse>).push(
+              buildAbortResponse(a)
+            );
+          });
+        } else {
+          failureResponse = buildAbortResponse(args);
+        }
+        waitingFunc && waitingFunc(false);
+        failureFunc(failureResponse);
+      }, timeout * maxRetryCount + timeout)
+    );
     for (var i = 1; i <= maxRetryCount; ++i) {
       // then create the abort + retry scenarios
       t.push(
@@ -149,37 +155,48 @@ export const sendRetryOrAbort = (
     }
   }
   sendAndEvalFunc(args, sf, ff, waitingFunc);
-}
+};
 
 export const sendAndEvaluate: SendAndEvalFunc = (
   args: SendArgs | Array<SendArgs>,
   successFunc: ResponseFunc,
   failureFunc: ResponseFunc,
-  waitingFunc?: ToggleFunc,
+  waitingFunc?: ToggleFunc
 ) => {
   if (!Array.isArray(args)) {
     // here we must retrieve the flechette instance again to decouple the values
     // that we use for initial setup from the ones e send with. This is to help
-    // support multiSends 
+    // support multiSends
     waitingFunc && waitingFunc(true);
     const response = fetchWrap(args);
     Promise.resolve(response).then(res => {
       const flechetteInstance = getFlechetteInstance(args.instanceName);
-      const reponse: FlechetteResponse = evaluateResponse(res, flechetteInstance);
+      const reponse: FlechetteResponse = evaluateResponse(
+        res,
+        flechetteInstance
+      );
       if (reponse.success) {
         waitingFunc && waitingFunc(false);
         successFunc(reponse);
       } else {
         // retry func encapsulates the whole retry process
         // if it returns false, it means we're not retrying so move onto failure
-        if (!retry(reponse, flechetteInstance, successFunc, failureFunc, waitingFunc)) {
+        if (
+          !retry(
+            reponse,
+            flechetteInstance,
+            successFunc,
+            failureFunc,
+            waitingFunc
+          )
+        ) {
           waitingFunc && waitingFunc(false);
           failureFunc(reponse);
         }
       }
     });
   } else {
-    throw new Error("Cannot use array of SendArgs"); 
+    throw new Error("Cannot use array of SendArgs");
   }
 };
 
@@ -194,16 +211,16 @@ export const sendAndEvaluateMultiple: SendAndEvalFunc = (
     const responses: Array<FlechetteResponse> = []; // var since retry may change
 
     waitingFunc && waitingFunc(true);
-    args.forEach((a) => {
+    args.forEach(a => {
       promises.push(fetchWrap(a));
     });
     Promise.all(promises).then(res => {
-      res.forEach((r) => {
+      res.forEach(r => {
         const flechetteInstance = getFlechetteInstance(r.sent.instanceName);
         const ev = evaluateResponse(r, flechetteInstance);
         responses.push(ev);
       });
-      if (responses.every((r) => r.success )) {
+      if (responses.every(r => r.success)) {
         waitingFunc && waitingFunc(false);
         successFunc(responses);
       } else {
@@ -214,11 +231,14 @@ export const sendAndEvaluateMultiple: SendAndEvalFunc = (
       }
     });
   } else {
-    throw new Error("Must use array of SendArgs"); 
+    throw new Error("Must use array of SendArgs");
   }
-}
+};
 
-const replaceOriginalPath = (path: string, ra: RetryAction): Array<string> | undefined => {
+const replaceOriginalPath = (
+  path: string,
+  ra: RetryAction
+): Array<string> | undefined => {
   var originalPathsToIgnore: string[] | undefined;
   if (Array.isArray(ra.pathsToIgnore)) {
     originalPathsToIgnore = [...ra.pathsToIgnore];
@@ -229,26 +249,29 @@ const replaceOriginalPath = (path: string, ra: RetryAction): Array<string> | und
     ra.pathsToIgnore.push(path);
   }
   return originalPathsToIgnore;
-}
+};
 
 export const retry = (
   response: FlechetteResponse,
   flechetteInstance: FlechetteController,
   successFunc: ResponseFunc,
   failureFunc: ResponseFunc,
-  waitingFunc?: ToggleFunc,
-) : boolean => {
+  waitingFunc?: ToggleFunc
+): boolean => {
   // this returns a array containing the desired retry action, if one exists,
   // and its index if it comes from the global retryActions.
 
   const ra = determineRetryAction(
-    response.statusCode, 
-    response.sent, 
-    flechetteInstance.retryActions);
+    response.statusCode,
+    response.sent,
+    flechetteInstance.retryActions
+  );
   if (ra[0] !== undefined) {
-    var finalize = () => {waitingFunc && waitingFunc(false)};
+    var finalize = () => {
+      waitingFunc && waitingFunc(false);
+    };
     if (ra[1] > -1) {
-      // this indicates it was in the global retry list, 
+      // this indicates it was in the global retry list,
       // so we'll need to remove it and add it back in when all steps are done.
       const originalPathsToIgnore: string[] | undefined = replaceOriginalPath(
         response.sent.path,
@@ -256,107 +279,107 @@ export const retry = (
       );
       finalize = () => {
         waitingFunc && waitingFunc(false);
-        flechetteInstance.retryActions[ra[1]].pathsToIgnore = originalPathsToIgnore;
-      }
+        flechetteInstance.retryActions[
+          ra[1]
+        ].pathsToIgnore = originalPathsToIgnore;
+      };
     }
-    const sf = (rVal: FlechetteResponse|Array<FlechetteResponse>) => {
+    const sf = (rVal: FlechetteResponse | Array<FlechetteResponse>) => {
       finalize();
       successFunc(rVal);
     };
-    const ff = (rVal: FlechetteResponse|Array<FlechetteResponse>) => {
+    const ff = (rVal: FlechetteResponse | Array<FlechetteResponse>) => {
       finalize();
       failureFunc(rVal);
     };
     // var retryAction determine when waiting is over
-    ra[0].action(
-      response, 
-      sf, 
-      ff
-    );
+    ra[0].action(response, sf, ff);
     return true;
   }
   return false;
-}
+};
 
 export const retryMultiple = (
   responses: Array<FlechetteResponse>,
   successFunc: ResponseFunc,
   failureFunc: ResponseFunc,
   waitingFunc?: ToggleFunc
-) : boolean => {
+): boolean => {
   var retVal: boolean = false;
   const promises: Array<Promise<FlechetteResponse>> = [];
   const localResponses = [...responses]; // make a copy since we'll mutate the index
-  const actionsToRebuild: Array<{instanceName: string, code: number, pathsToIgnore?: Array<string>}> =[];
-  localResponses.forEach((r) => {
+  const actionsToRebuild: Array<{
+    instanceName: string;
+    code: number;
+    pathsToIgnore?: Array<string>;
+  }> = [];
+  localResponses.forEach(r => {
     if (!r.success) {
       const fi: FlechetteController = getFlechetteInstance(r.sent.instanceName);
-      const ra = determineRetryAction(
-        r.statusCode, 
-        r.sent, 
-        fi.retryActions
-      );
+      const ra = determineRetryAction(r.statusCode, r.sent, fi.retryActions);
       if (ra[0] !== undefined) {
         retVal = true;
         // splice out the retry from the responses
-        const i: number = responses.findIndex((res) => { 
-          return (res.sent.path === r.sent.path && res.sent.instanceName === r.sent.instanceName);
+        const i: number = responses.findIndex(res => {
+          return (
+            res.sent.path === r.sent.path &&
+            res.sent.instanceName === r.sent.instanceName
+          );
         });
-        responses.splice(i,1);
+        responses.splice(i, 1);
         if (ra[1] > -1) {
           // this means we've got a global action.
           // we need to add this path to the action's pathsToIgnore
-          const originalPathsToIgnore: string[] | undefined = replaceOriginalPath(
-            r.sent.path,
-            ra[0]
-          );
+          const originalPathsToIgnore:
+            | string[]
+            | undefined = replaceOriginalPath(r.sent.path, ra[0]);
           // now add this to a list to change back later
-          const atr = actionsToRebuild.find(
-            (a) => { 
-              return (a.code === (ra[0] as RetryAction).code 
-              && a.instanceName === fi.instanceName)
-            }
-          );
+          const atr = actionsToRebuild.find(a => {
+            return (
+              a.code === (ra[0] as RetryAction).code &&
+              a.instanceName === fi.instanceName
+            );
+          });
           if (!atr) {
             actionsToRebuild.push({
               code: ra[0].code,
-              instanceName: fi.instanceName, 
+              instanceName: fi.instanceName,
               pathsToIgnore: originalPathsToIgnore
             });
           }
         }
         // we can't guarantee that all RetryActions will do another send
-        // so retries need to be wrapped in a promise that resolves 
+        // so retries need to be wrapped in a promise that resolves
         // when all the success or failure funcs are fired.
-        promises.push(new Promise((resolve) => {
-          const sf = (rVal: FlechetteResponse|Array<FlechetteResponse>) => {
-            resolve(rVal as FlechetteResponse);
-          };
-          const ff = (rVal: FlechetteResponse|Array<FlechetteResponse>) => {
-            resolve(rVal as FlechetteResponse);
-          };
-          (ra[0] as RetryAction).action(r, 
-            sf, 
-            ff);
-        }));
+        promises.push(
+          new Promise(resolve => {
+            const sf = (rVal: FlechetteResponse | Array<FlechetteResponse>) => {
+              resolve(rVal as FlechetteResponse);
+            };
+            const ff = (rVal: FlechetteResponse | Array<FlechetteResponse>) => {
+              resolve(rVal as FlechetteResponse);
+            };
+            (ra[0] as RetryAction).action(r, sf, ff);
+          })
+        );
       }
     }
   });
   if (promises.length > 0) {
-    Promise.all(promises).then((res) => {
+    Promise.all(promises).then(res => {
       // add the new responses from retry actions back to existing list
       responses = responses.concat(res);
       // rebuild any actions we've removed
-      actionsToRebuild.forEach((atr) => {
+      actionsToRebuild.forEach(atr => {
         const fi = getFlechetteInstance(atr.instanceName);
-        const retA: RetryAction|undefined = fi.retryActions.find((ra) => {
+        const retA: RetryAction | undefined = fi.retryActions.find(ra => {
           return ra.code === atr.code;
         });
-        (retA) && (retA.pathsToIgnore = atr.pathsToIgnore);
+        retA && (retA.pathsToIgnore = atr.pathsToIgnore);
       });
       // finally, call the success or failure func
       waitingFunc && waitingFunc(false);
-      if (responses.every((r) => r.success )) {
+      if (responses.every(r => r.success)) {
         successFunc(responses);
       } else {
         failureFunc(responses);
@@ -364,7 +387,7 @@ export const retryMultiple = (
     });
   }
   return retVal;
-}
+};
 
 export const evaluateResponse = (
   resp: NetResponse,
@@ -382,7 +405,12 @@ export const evaluateResponse = (
     s = checkCodes(resp.statusCode, sc);
     return s;
   });
-  return { success: s, statusCode: resp.statusCode, response: r, sent:  resp.sent};
+  return {
+    response: r,
+    sent: resp.sent,
+    statusCode: resp.statusCode,
+    success: s
+  };
 };
 
 export const fetchWrap = (args: SendArgs): Promise<NetResponse> => {
