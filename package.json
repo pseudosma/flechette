@@ -1,6 +1,6 @@
 {
   "name": "flechette",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A highly configurable wrapper for Fetch API that supports programmatic retries and completely obfuscates promise handling.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
