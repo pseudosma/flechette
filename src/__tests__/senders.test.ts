@@ -39,7 +39,7 @@ describe("when using fetchWrap", () => {
     const p = fetchWrap(args);
     Promise.resolve(p).then(res => {
       expect(res).toStrictEqual({
-        statusCode: 500,
+        statusCode: 0,
         response: "Unknown Error: Error: rejection",
         sent: args
       });
@@ -58,7 +58,7 @@ describe("when using fetchWrap", () => {
     const p = fetchWrap(args);
     Promise.resolve(p).then(res => {
       expect(res).toStrictEqual({
-        statusCode: 500,
+        statusCode: 0,
         response: "Request Aborted",
         sent: args
       });

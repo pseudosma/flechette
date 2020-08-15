@@ -429,6 +429,6 @@ export const fetchWrap = (args: SendArgs): Promise<NetResponse> => {
       if (err.name === "AbortError") {
         r = "Request Aborted";
       }
-      return { response: r, statusCode: 500, sent: args };
+      return { response: r, statusCode: 0, sent: args };
     });
 };
