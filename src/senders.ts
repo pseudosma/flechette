@@ -88,7 +88,7 @@ const buildAbortResponse = (args: SendArgs) => {
   return {
     response: "Request Timed Out",
     sent: args,
-    statusCode: 500,
+    statusCode: 0,
     success: false
   };
 };

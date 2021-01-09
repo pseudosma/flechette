@@ -1230,7 +1230,7 @@ describe("when using send", () => {
         expect(loadingCount).toStrictEqual(4);
         expect(response).toStrictEqual({
           success: false,
-          statusCode: 500,
+          statusCode: 0,
           response: "Request Timed Out",
           sent: args
         });
@@ -1470,13 +1470,13 @@ describe("when using send", () => {
         expect(response).toStrictEqual([
           {
             success: false,
-            statusCode: 500,
+            statusCode: 0,
             response: "Request Timed Out",
             sent: a1
           },
           {
             success: false,
-            statusCode: 500,
+            statusCode: 0,
             response: "Request Timed Out",
             sent: a2
           }
